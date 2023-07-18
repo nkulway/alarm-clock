@@ -1,69 +1,48 @@
-import os
 import sys
-import openai
-import RPi.GPIO as GPIO
 import time
-from elevenlabs import generate, play, set_api_key, clone
-from dotenv import load_dotenv
-from weather import weather
+import RPi.GPIO as GPIO
+from elevenlabs import play
+from resources.Chat import Chat
 
-load_dotenv()
-set_api_key(os.environ.get("ELEVEN_LABS_API_KEY"))
-openai.api_key = os.environ.get("OPENAI_API_KEY")
 
-GPIO.setmode(GPIO.BOARD)
+class AlarmClock:
+    def alarmClock():
+        GPIO.setmode(GPIO.BOARD)
 
-resistorPin = 7
-isNight = True
-while isNight:
-    GPIO.setup(resistorPin, GPIO.OUT)
-    GPIO.output(resistorPin, GPIO.LOW)
-    time.sleep(0.1)
+        resistorPin = 7
+        isNight = True
 
-    GPIO.setup(resistorPin, GPIO.IN)
-    currentTime = time.time()
-    diff = 0
+        while isNight:
+            GPIO.setup(resistorPin, GPIO.OUT)
+            GPIO.output(resistorPin, GPIO.LOW)
+            time.sleep(0.1)
+            GPIO.setup(resistorPin, GPIO.IN)
+            currentTime = time.time()
+            diff = 0
 
-    while GPIO.input(resistorPin) == GPIO.LOW:
-        diff = time.time() - currentTime
+            while GPIO.input(resistorPin) == GPIO.LOW:
+                diff = time.time() - currentTime
 
-    sensorReading = diff * 1000
+            sensorReading = diff * 1000
 
-    print(sensorReading)
+            print(sensorReading)
 
-    if sensorReading > 30:
-        # do nothing
-        print("LIGHTS OFF")
-    elif sensorReading < 30:
-        # trigger generative ai voice
-        print("TIME TO WAKE UP")
-        res = weather()
-        print(res["weather"][0]["description"])
-        weather = res["weather"][0]["description"]
-        temp = res['main']['temp']
-        completion = openai.ChatCompletion.create(
-            model="gpt-3.5-turbo",
-            messages=[
-                {
-                    "role": "user",
-                    "content": f"Give a wakeup greeting mentioning this value as the temperature {temp} and this weather description {weather} no longer than 30 words like a pirate.",
-                }
-            ],
-        )
+            if sensorReading > 30:
+                # do nothing
+                print("LIGHTS OFF")
+            elif sensorReading < 30:
+                # trigger generative ai voice
+                print("TIME TO WAKE UP")
+                audio = Chat.getTextToSpeech()
+                play(audio)
+                print(sys.path)
+                isNight = False
 
-        audio = generate(
-            text=completion.choices[0].message.content,
-            voice="Sam",
-            model="eleven_monolingual_v1",
-        )
+            time.sleep(1)
 
-        print(completion.choices[0].message.content)
 
-        play(audio)
-        print(sys.path)
-        isNight = False
+AlarmClock.alarmClock()
 
-    time.sleep(1)
 
 
 # To be used with paid tier
