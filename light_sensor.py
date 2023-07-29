@@ -1,12 +1,12 @@
-import sys
 import time
 import RPi.GPIO as GPIO
 from elevenlabs import play
 from resources.Chat import Chat
+from resources.SpeechToText import SpeechToText
 
 
 class AlarmClock:
-    def alarmClock():
+    def alarm_clock():
         GPIO.setmode(GPIO.BOARD)
 
         resistorPin = 7
@@ -32,16 +32,22 @@ class AlarmClock:
                 print("LIGHTS OFF")
             elif sensorReading < 30:
                 # trigger generative ai voice
-                print("TIME TO WAKE UP")
-                audio = Chat.getTextToSpeech()
-                play(audio)
-                print(sys.path)
                 isNight = False
+                print("TIME TO WAKE UP")
+                
+                greeting = Chat.get_greeting_with_weather()
+                greeting_audio = Chat.get_text_to_speech(greeting)
+                play(greeting_audio)
+                
+                user_response = SpeechToText.speech_to_text()
+                chat_response = Chat.get_text_to_speech(user_response)
+                play(chat_response)
 
             time.sleep(1)
 
 
-AlarmClock.alarmClock()
+    if __name__ == "__main__":
+        alarm_clock()
 
 
 

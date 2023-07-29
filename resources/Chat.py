@@ -14,31 +14,28 @@ class WeatherDetails(TypedDict):
     currentTemp: str
 
 class Chat:
-    def getWeather() -> WeatherDetails:
+    def get_greeting_with_weather() -> str:
         res = Weather.weather()
         print(res["weather"][0]["description"])
         weather = res["weather"][0]["description"]
         temp = res["main"]["temp"]
-        return {"description": weather, "currentTemp": temp}
+        greeting  = f"Give a wakeup greeting mentioning this value as the temperature {temp} and this weather description {weather}"
+        return greeting
     
-    def getGreeting(weatherDetails: WeatherDetails):
-        temp = weatherDetails["currentTemp"]
-        weather = weatherDetails["description"]
+    def get_greeting(text: str):
         completion = openai.ChatCompletion.create(
             model="gpt-3.5-turbo",
             messages=[
                 {
                     "role": "user",
-                    "content": f"Give a wakeup greeting mentioning this value as the temperature {temp} and this weather description {weather} no longer than 30 words like a pirate.",
+                    "content": f"{text} no longer than 30 words like a pirate.",
                 }
             ],
         )
         return completion
 
-    def getTextToSpeech():
-        weatherDetails = Chat.getWeather()
-        print(weatherDetails)
-        completion = Chat.getGreeting(weatherDetails)
+    def get_text_to_speech(text: str):
+        completion = Chat.get_greeting(text)
         print(completion.choices[0].message.content)
         audio = generate(
             text=completion.choices[0].message.content,
